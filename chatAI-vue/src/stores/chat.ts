@@ -54,14 +54,20 @@ export const useChatStore = defineStore('chat', () => {
     isLoading.value = true
 
     try {
-      // 调用 API
-      const response = await ChatAPI.sendMessage(content, currentModel.value)
+      // 构建完整的对话历史（根据 DeepSeek 文档要求，需要传递所有历史消息）
+      const conversationHistory = messages.value.map((msg) => ({
+        role: msg.role,
+        content: msg.content,
+      }))
+
+      // 调用 DeepSeek API，传递完整的对话历史
+      const response = await ChatAPI.sendMessage(conversationHistory, currentModel.value)
 
       // 添加 AI 回复
       const assistantMessage: Message = {
         id: generateId(),
         role: 'assistant',
-        content: response.content || response,
+        content: response.content,
         time: formatTime(),
         timestamp: Date.now(),
       }
@@ -74,6 +80,9 @@ export const useChatStore = defineStore('chat', () => {
     } catch (err: any) {
       error.value = err.message || '发送消息失败，请稍后重试'
       console.error('Send message error:', err)
+      
+      // 如果出错，移除刚才添加的用户消息（可选，根据需求决定）
+      // messages.value.pop()
     } finally {
       isLoading.value = false
     }

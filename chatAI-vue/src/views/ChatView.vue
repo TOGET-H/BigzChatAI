@@ -6,6 +6,7 @@ import ChatMessage from '@/components/ChatMessage.vue'
 import ChatInput from '@/components/ChatInput.vue'
 import TypingIndicator from '@/components/TypingIndicator.vue'
 import SuggestChips from '@/components/SuggestChips.vue'
+import ErrorMessage from '@/components/ErrorMessage.vue'
 
 const chatStore = useChatStore()
 const chatStreamRef = ref<HTMLElement>()
@@ -59,6 +60,7 @@ onMounted(() => {
         </div>
 
         <div class="chat-card">
+          <ErrorMessage v-if="chatStore.error" :message="chatStore.error" />
           <div ref="chatStreamRef" class="chat-stream">
             <ChatMessage
               v-for="msg in chatStore.messages"

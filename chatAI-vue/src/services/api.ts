@@ -1,22 +1,72 @@
 /**
- * API 服务层
+ * API 服务层 - DeepSeek API 集成
+ * 参考文档: https://api-docs.deepseek.com/zh-cn/guides/multi_round_chat
  */
 
-import { get, post, del } from './request'
+import { post } from './request'
 import type { Message, Conversation } from '@/types'
+import { DEEPSEEK_API_KEY, DEEPSEEK_API_URL } from '@/utils/env'
+
+// DeepSeek 模型映射
+const MODEL_MAP: Record<string, string> = {
+  'Bigz GPT-4.5': 'deepseek-chat',
+  'Bigz GPT-4.5 Mini': 'deepseek-chat',
+  'Bigz GPT-Vision': 'deepseek-chat',
+}
 
 export class ChatAPI {
   /**
-   * 发送消息
+   * 发送消息（多轮对话）
+   * 根据 DeepSeek 文档，需要将完整的对话历史传递给 API
+   * @param messages 完整的对话历史（包括之前的所有 user 和 assistant 消息）
+   * @param model 模型名称
    */
-  static async sendMessage(prompt: string, model: string): Promise<{ content: string }> {
+  static async sendMessage(
+    messages: Array<{ role: 'user' | 'assistant'; content: string }>,
+    model: string
+  ): Promise<{ content: string }> {
     try {
-      // 这里应该调用真实的后端 API
-      // 目前使用模拟数据
-      return await mockSendMessage(prompt, model)
-    } catch (error) {
+      // 将模型名称映射到 DeepSeek 模型
+      const deepseekModel = MODEL_MAP[model] || 'deepseek-chat'
+
+      // 构建请求体
+      const requestBody = {
+        model: deepseekModel,
+        messages: messages,
+        temperature: 0.7,
+        stream: false,
+      }
+
+      // 调用 DeepSeek API
+      const response = await fetch(DEEPSEEK_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
+        },
+        body: JSON.stringify(requestBody),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(
+          errorData.error?.message || `API 请求失败: ${response.status} ${response.statusText}`
+        )
+      }
+
+      const data = await response.json()
+
+      // 提取回复内容
+      const content = data.choices?.[0]?.message?.content
+
+      if (!content) {
+        throw new Error('API 返回格式错误：未找到回复内容')
+      }
+
+      return { content }
+    } catch (error: any) {
       console.error('Send message error:', error)
-      throw error
+      throw new Error(error.message || '发送消息失败，请稍后重试')
     }
   }
 
@@ -25,8 +75,8 @@ export class ChatAPI {
    */
   static async getHistory(): Promise<Conversation[]> {
     try {
-      // 这里应该调用真实的后端 API
-      // 目前返回空数组，实际数据从本地存储获取
+      // DeepSeek API 是无状态的，历史记录由客户端管理
+      // 这里返回空数组，实际数据从本地存储获取
       return []
     } catch (error) {
       console.error('Get history error:', error)
@@ -39,34 +89,12 @@ export class ChatAPI {
    */
   static async deleteConversation(id: string): Promise<void> {
     try {
-      // 这里应该调用真实的后端 API
-      // 目前只做本地处理
+      // DeepSeek API 是无状态的，删除操作由客户端管理
       return Promise.resolve()
     } catch (error) {
       console.error('Delete conversation error:', error)
       throw error
     }
-  }
-}
-
-/**
- * 模拟发送消息（用于演示）
- */
-async function mockSendMessage(prompt: string, model: string): Promise<{ content: string }> {
-  // 模拟网络延迟
-  await new Promise((resolve) => setTimeout(resolve, 800 + Math.random() * 500))
-
-  // 模拟不同的回复内容
-  const responses = [
-    `我已经理解了你的问题："${prompt}"。\n\n让我为你提供一个详细的回答...`,
-    `关于"${prompt}"这个问题，我可以从以下几个方面来帮你：\n\n1. 首先...\n2. 其次...\n3. 最后...`,
-    `好的，我来帮你解决这个问题。\n\n${prompt}\n\n基于你提供的信息，我的建议是...`,
-  ]
-
-  const randomResponse = responses[Math.floor(Math.random() * responses.length)]
-
-  return {
-    content: randomResponse,
   }
 }
 

@@ -58,3 +58,5 @@ export function truncate(text: string, maxLength: number): string {
   return text.slice(0, maxLength) + '...'
 }
 
+
+

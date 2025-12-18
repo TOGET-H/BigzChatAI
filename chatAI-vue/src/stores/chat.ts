@@ -93,7 +93,7 @@ export const useChatStore = defineStore('chat', () => {
     const conversation: Conversation = {
       id: generateId(),
       title: messages.value.length > 0
-        ? truncate(messages.value[0].content, 30)
+        ? truncate(messages.value[0]?.content ?? '', 30)
         : '新对话',
       messages: [...messages.value],
       model: currentModel.value,

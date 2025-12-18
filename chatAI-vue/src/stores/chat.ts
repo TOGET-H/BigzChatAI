@@ -24,10 +24,10 @@ export const useChatStore = defineStore('chat', () => {
   // 初始化：从本地存储加载对话历史
   function initStore() {
     const savedConversations = getStorage<Conversation[]>('conversations', [])
-    conversations.value = savedConversations
+    conversations.value = savedConversations || []
 
     const savedModel = getStorage<string>('currentModel', 'Bigz GPT-4.5')
-    currentModel.value = savedModel
+    currentModel.value = savedModel || 'Bigz GPT-4.5'
   }
 
   // 发送消息
@@ -115,7 +115,7 @@ export const useChatStore = defineStore('chat', () => {
       conversation.messages = [...messages.value]
       conversation.updatedAt = Date.now()
       conversation.title =
-        messages.value.length > 0
+        messages.value.length > 0 && messages.value[0]
           ? truncate(messages.value[0].content, 30)
           : '新对话'
       saveConversations()

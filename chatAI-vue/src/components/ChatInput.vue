@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, defineExpose } from 'vue'
+import { ref, watch } from 'vue'
 import { useChatStore } from '@/stores/chat'
 
 const chatStore = useChatStore()
